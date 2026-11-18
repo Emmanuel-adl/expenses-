@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" data-frame="phone">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0b0f14" id="meta-theme-color" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Brim ₡" />
+  <title>Brim Personal — Safe-to-Spend (CRC ₡)</title>
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="./icon.svg" />
+  <link rel="apple-touch-icon" href="./icon.svg" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <!-- Desktop Utility Bar (hidden on mobile / standalone PWA) -->
+  <aside class="desktop-toolbar" aria-label="Preview controls">
+    <div class="toolbar-brand">
+      <span class="toolbar-logo" aria-hidden="true">₡</span>
+      <div>
+        <strong>Brim Personal</strong>
+        <span class="toolbar-sub">CRC Colones Edition · Local-first PWA</span>
+      </div>
+    </div>
+    <div class="toolbar-actions">
+      <button type="button" class="toolbar-pill" id="btn-toggle-frame" aria-pressed="true">
+        <span aria-hidden="true">📱</span>
+        <span id="frame-label">Phone Preview</span>
+      </button>
+      <button type="button" class="toolbar-pill" id="btn-toggle-theme-desktop" aria-label="Toggle color theme">
+        <span class="theme-icon" aria-hidden="true">☀️</span>
+        <span class="theme-text">Light Mode</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- App Shell (Phone Frame on Desktop, Fullscreen on Mobile) -->
+  <div class="stage">
+    <div class="device-shell">
+      <div class="dynamic-island" aria-hidden="true">
+        <span class="island-camera"></span>
+      </div>
+
+      <div class="app-viewport">
+        <!-- Top App Header -->
+        <header class="app-header">
+          <div class="header-left">
+            <div class="app-badge" aria-hidden="true">₡</div>
+            <div>
+              <h1 class="app-title" id="header-title">Safe to Spend</h1>
+              <p class="cycle-subtitle" id="header-cycle-label">Nov 1 – Nov 30 · 13d left</p>
+            </div>
+          </div>
+          <div class="header-actions">
+            <button type="button" class="icon-btn" id="btn-cycle-quick-toggle" title="Switch Pay Cycle (Monthly / Quincenal)" aria-label="Switch Pay Cycle">
+              <span id="cycle-badge-short">1M</span>
+            </button>
+            <button type="button" class="icon-btn" id="btn-toggle-theme" title="Toggle Dark/Light Theme" aria-label="Toggle Dark/Light Theme">
+              <span class="theme-icon" aria-hidden="true">☀️</span>
+            </button>
+          </div>
+        </header>
+
+        <!-- Main Scrollable Content Area -->
+        <main class="tab-content" id="main-scroll">
+          <!-- TAB 1: SPEND -->
+          <section id="tab-spend" class="tab-panel active" aria-labelledby="nav-spend">
+            <!-- Hero Safe-to-Spend Card -->
+            <article class="hero-card" aria-live="polite">
+              <div class="hero-top">
+                <div class="hero-numbers">
+                  <span class="eyebrow">AVAILABLE THIS CYCLE</span>
+                  <div class="hero-amount" id="hero-safe-amount">₡0</div>
+                  <div class="hero-sub">
+                    of <span id="hero-disposable-total">₡0</span> disposable pool
+                  </div>
+                </div>
+                <div class="gauge-wrap" aria-hidden="true">
+                  <svg class="gauge-svg" viewBox="0 0 100 100">
+                    <circle class="gauge-track" cx="50" cy="50" r="40"></circle>
+                    <circle class="gauge-progress" id="hero-gauge-circle" cx="50" cy="50" r="40" stroke-dasharray="251.327" stroke-dashoffset="0"></circle>
+                  </svg>
+                  <div class="gauge-center">
+                    <span id="hero-pct-left">100%</span>
+                    <small>left</small>
+                  </div>
+                </div>
+              </div>
+
+              <div class="hero-bar-wrap" aria-hidden="true">
+                <div class="hero-bar-fill" id="hero-bar-fill" style="width: 100%"></div>
+              </div>
+
+              <div class="hero-metrics">
+                <div class="metric-pill">
+                  <span class="metric-label">Safe Today</span>
+                  <strong class="metric-value" id="hero-safe-today">₡0/d</strong>
+                </div>
+                <div class="metric-pill">
+                  <span class="metric-label">Days Left</span>
+                  <strong class="metric-value" id="hero-days-left">1 day</strong>
+                </div>
+                <div class="metric-pill" id="hero-pace-pill">
+                  <span class="metric-label">Pace</span>
+                  <strong class="metric-value" id="hero-pace-val">On track</strong>
+                </div>
+              </div>
+            </article>
+
+            <!-- 3-Second Expense Logger -->
+            <section class="logger-card" aria-label="Quick expense entry">
+              <div class="logger-display-row">
+                <div class="logger-amount-box">
+                  <span class="currency-prefix">₡</span>
+                  <span class="logger-amount" id="keypad-display">0</span>
+                </div>
+                <button type="button" class="clear-amount-btn" id="btn-clear-amount" aria-label="Clear amount" hidden>Clear</button>
+              </div>
+
+              <div class="logger-meta-row">
+                <input
+                  type="text"
+                  id="input-expense-note"
+                  class="note-input"
+                  placeholder="Optional note (e.g. Auto Mercado, Café)"
+                  maxlength="60"
+                  autocomplete="off"
+                />
+                <input
+                  type="date"
+                  id="input-expense-date"
+                  class="date-chip-input"
+                  aria-label="Expense date"
+                />
+              </div>
+
+              <!-- CRC Quick Add Chips -->
+              <div class="quick-chips" role="group" aria-label="Quick add Colones">
+                <button type="button" class="chip-btn" data-add="1000">+₡1 mil</button>
+                <button type="button" class="chip-btn" data-add="2500">+₡2.5 mil</button>
+                <button type="button" class="chip-btn" data-add="5000">+₡5 mil</button>
+                <button type="button" class="chip-btn" data-add="10000">+₡10 mil</button>
+                <button type="button" class="chip-btn" data-add="25000">+₡25 mil</button>
+              </div>
+
+              <!-- Category Buttons (Tap to Log) -->
+              <div class="category-hint-row">
+                <span class="section-label">Tap category to log expense</span>
+                <button type="button" class="link-btn" id="btn-edit-categories-shortcut">Edit categories</button>
+              </div>
+              <div class="category-grid" id="category-grid" role="group" aria-label="Expense categories">
+                <!-- Populated by JS -->
+              </div>
+
+              <!-- Tactile Keypad -->
+              <div class="keypad-grid" role="group" aria-label="Numeric keypad">
+                <button type="button" class="key-btn" data-key="1">1</button>
+                <button type="button" class="key-btn" data-key="2">2</button>
+                <button type="button" class="key-btn" data-key="3">3</button>
+                <button type="button" class="key-btn" data-key="4">4</button>
+                <button type="button" class="key-btn" data-key="5">5</button>
+                <button type="button" class="key-btn" data-key="6">6</button>
+                <button type="button" class="key-btn" data-key="7">7</button>
+                <button type="button" class="key-btn" data-key="8">8</button>
+                <button type="button" class="key-btn" data-key="9">9</button>
+                <button type="button" class="key-btn key-special" data-key="000" aria-label="Three zeros">000</button>
+                <button type="button" class="key-btn" data-key="0">0</button>
+                <button type="button" class="key-btn key-special" data-key="back" aria-label="Backspace">⌫</button>
+              </div>
+            </section>
+
+            <!-- Recent Quick Feed -->
+            <section class="card recent-card" aria-label="Recent expenses">
+              <div class="card-header-row">
+                <h2>Latest Expenses</h2>
+                <button type="button" class="link-btn" id="btn-see-all-activity">See all</button>
+              </div>
+              <div id="recent-list" class="tx-list">
+                <!-- Populated by JS -->
+              </div>
+            </section>
+          </section>
+
+          <!-- TAB 2: ACTIVITY -->
+          <section id="tab-activity" class="tab-panel" aria-labelledby="nav-activity" hidden>
+            <div class="activity-controls">
+              <div class="search-box">
+                <span class="search-icon" aria-hidden="true">🔍</span>
+                <input
+                  type="search"
+                  id="activity-search"
+                  placeholder="Search notes or categories..."
+                  aria-label="Search transactions"
+                />
+              </div>
+              <div class="segmented-control small" role="group" aria-label="Scope filter">
+                <button type="button" class="seg-btn active" data-scope="cycle" id="scope-cycle-btn">This Cycle</button>
+                <button type="button" class="seg-btn" data-scope="all" id="scope-all-btn">All History</button>
+              </div>
+            </div>
+
+            <div class="filter-pills" id="activity-cat-filters" role="group" aria-label="Filter by category">
+              <!-- Populated by JS -->
+            </div>
+
+            <div class="activity-summary-strip">
+              <span id="activity-count-label">0 expenses</span>
+              <strong id="activity-total-label">₡0</strong>
+            </div>
+
+            <div id="activity-groups" class="activity-groups">
+              <!-- Populated by JS -->
+            </div>
+          </section>
+
+          <!-- TAB 3: PLAN -->
+          <section id="tab-plan" class="tab-panel" aria-labelledby="nav-plan" hidden>
+            <!-- Waterfall Card -->
+            <article class="card waterfall-card">
+              <div class="card-header-row">
+                <h2>Cycle Waterfall</h2>
+                <span class="badge-pill" id="plan-cycle-badge">Monthly</span>
+              </div>
+              <div class="waterfall-bar" id="waterfall-bar" aria-label="Income allocation breakdown">
+                <!-- Populated by JS -->
+              </div>
+              <div class="waterfall-legend" id="waterfall-legend">
+                <!-- Populated by JS -->
+              </div>
+            </article>
+
+            <!-- Pay Cycle & Income Settings -->
+            <article class="card settings-card">
+              <h2>Income &amp; Savings Target</h2>
+
+              <div class="field-group">
+                <label class="field-label">Pay Cycle</label>
+                <div class="segmented-control" role="group" aria-label="Pay cycle mode">
+                  <button type="button" class="seg-btn active" data-cycle="monthly" id="btn-mode-monthly">Monthly</button>
+                  <button type="button" class="seg-btn" data-cycle="quincenal" id="btn-mode-quincenal">Quincenal (1st &amp; 15th)</button>
+                </div>
+              </div>
+
+              <div class="field-row" id="payday-row">
+                <div class="field-group">
+                  <label for="input-payday" class="field-label">Monthly Payday (Day 1–28)</label>
+                  <input type="number" id="input-payday" min="1" max="28" class="std-input" />
+                </div>
+              </div>
+
+              <div class="field-row two-col">
+                <div class="field-group">
+                  <label for="input-income" class="field-label" id="label-income">Cycle Income (₡)</label>
+                  <div class="input-with-prefix">
+                    <span>₡</span>
+                    <input type="number" id="input-income" min="0" step="1000" class="std-input" />
+                  </div>
+                </div>
+                <div class="field-group">
+                  <label for="input-savings" class="field-label" id="label-savings">Savings Goal (₡)</label>
+                  <div class="input-with-prefix">
+                    <span>₡</span>
+                    <input type="number" id="input-savings" min="0" step="1000" class="std-input" />
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <!-- Spending Categories -->
+            <article class="card categories-card" id="plan-categories-card">
+              <div class="card-header-row">
+                <div>
+                  <h2>Spending Categories</h2>
+                  <p class="card-sub">Tap to edit emoji, name, color, or order</p>
+                </div>
+                <button type="button" class="primary-pill-btn" id="btn-open-category-modal">+ Add</button>
+              </div>
+              <div id="plan-categories-list" class="categories-manage-list">
+                <!-- Populated by JS -->
+              </div>
+            </article>
+
+            <!-- Fixed Recurring Bills -->
+            <article class="card bills-card">
+              <div class="card-header-row">
+                <div>
+                  <h2>Fixed Recurring Bills</h2>
+                  <p class="card-sub">Deducted automatically every cycle</p>
+                </div>
+                <button type="button" class="primary-pill-btn" id="btn-open-bill-modal">+ Add Bill</button>
+              </div>
+              <div class="bills-total-banner">
+                <span>Active Fixed Total</span>
+                <strong id="plan-bills-total">₡0</strong>
+              </div>
+              <div id="bills-list" class="bills-list">
+                <!-- Populated by JS -->
+              </div>
+            </article>
+          </section>
+
+          <!-- TAB 4: INSIGHTS -->
+          <section id="tab-insights" class="tab-panel" aria-labelledby="nav-insights" hidden>
+            <!-- Chart 1: Savings & Health Summary -->
+            <article class="card insights-kpi-card">
+              <h2>Cycle Health</h2>
+              <div class="kpi-grid">
+                <div class="kpi-box">
+                  <span class="kpi-label">Savings Rate</span>
+                  <strong class="kpi-val" id="insight-savings-rate">0%</strong>
+                  <span class="kpi-sub" id="insight-savings-sub">Goal + unspent</span>
+                </div>
+                <div class="kpi-box">
+                  <span class="kpi-label">Fixed Ratio</span>
+                  <strong class="kpi-val" id="insight-fixed-ratio">0%</strong>
+                  <span class="kpi-sub">of income</span>
+                </div>
+                <div class="kpi-box">
+                  <span class="kpi-label">Avg Daily Spend</span>
+                  <strong class="kpi-val" id="insight-avg-daily">₡0</strong>
+                  <span class="kpi-sub" id="insight-avg-sub">per day elapsed</span>
+                </div>
+              </div>
+            </article>
+
+            <!-- Chart 2: Category Breakdown -->
+            <article class="card">
+              <div class="card-header-row">
+                <h2>Spending by Category</h2>
+                <span class="card-sub" id="insight-cat-total">₡0</span>
+              </div>
+              <div id="chart-categories" class="cat-bars-chart">
+                <!-- Populated by JS -->
+              </div>
+            </article>
+
+            <!-- Chart 3: Daily Rhythm -->
+            <article class="card">
+              <div class="card-header-row">
+                <h2>Daily Spending Rhythm</h2>
+                <span class="card-sub" id="insight-daily-target">Target ≤ ₡0/d</span>
+              </div>
+              <div id="chart-daily-rhythm" class="daily-rhythm-chart">
+                <!-- Populated by JS -->
+              </div>
+            </article>
+
+            <!-- Chart 4: Top Expenses -->
+            <article class="card">
+              <h2>Top Variable Expenses</h2>
+              <div id="insight-top-expenses" class="tx-list">
+                <!-- Populated by JS -->
+              </div>
+            </article>
+
+            <!-- Live iOS Widget Preview -->
+            <article class="card widget-preview-card">
+              <div class="card-header-row">
+                <div>
+                  <h2>iOS Widget Preview</h2>
+                  <p class="card-sub">Live Home &amp; Lock Screen glance</p>
+                </div>
+              </div>
+              <div class="ios-widgets-row">
+                <div class="ios-widget-small">
+                  <div class="widget-top">
+                    <span class="widget-dot"></span>
+                    <span>BRIM ₡</span>
+                  </div>
+                  <div class="widget-main">
+                    <span class="widget-lbl">Safe to Spend</span>
+                    <strong class="widget-amt" id="widget-small-safe">₡0</strong>
+                  </div>
+                  <div class="widget-foot">
+                    <span id="widget-small-daily">₡0/day</span>
+                    <span id="widget-small-days">13d</span>
+                  </div>
+                </div>
+                <div class="ios-widget-medium">
+                  <div class="widget-med-left">
+                    <div class="widget-top">
+                      <span class="widget-dot"></span>
+                      <span>SAFE TODAY</span>
+                    </div>
+                    <strong class="widget-med-amt" id="widget-med-daily">₡0</strong>
+                    <span class="widget-med-sub" id="widget-med-pace">On track</span>
+                  </div>
+                  <div class="widget-med-right">
+                    <div class="widget-stat">
+                      <span>Cycle Left</span>
+                      <strong id="widget-med-safe">₡0</strong>
+                    </div>
+                    <div class="widget-stat">
+                      <span>Spent</span>
+                      <strong id="widget-med-spent">₡0</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <!-- Apple Pay / iOS Shortcuts Automation Hook -->
+            <article class="card shortcut-card">
+              <div class="card-header-row">
+                <div>
+                  <h2>Apple Pay Automation Hook</h2>
+                  <p class="card-sub">Trigger via iOS Shortcuts "Transaction" automation</p>
+                </div>
+              </div>
+              <p class="shortcut-explain">
+                In iOS Shortcuts, create a <strong>Transaction</strong> automation that opens this URL with the card tap amount and merchant name:
+              </p>
+              <code class="shortcut-url" id="shortcut-template-url"></code>
+              <div class="shortcut-actions">
+                <button type="button" class="secondary-btn" id="btn-copy-shortcut">Copy Shortcut URL</button>
+                <button type="button" class="primary-pill-btn" id="btn-test-shortcut">Simulate ₡4,500 Tap</button>
+              </div>
+            </article>
+
+            <!-- Data Portability & Reset -->
+            <article class="card data-card">
+              <h2>Your Data (100% Local)</h2>
+              <p class="card-sub">Stored privately on your device. No servers, no accounts.</p>
+              <div class="data-actions-grid">
+                <button type="button" class="secondary-btn" id="btn-export-csv">Export CSV</button>
+                <button type="button" class="secondary-btn" id="btn-export-json">Backup JSON</button>
+                <label class="secondary-btn file-label">
+                  Import JSON
+                  <input type="file" id="input-import-json" accept="application/json" hidden />
+                </label>
+                <button type="button" class="secondary-btn" id="btn-restore-demo">Load Demo Data</button>
+              </div>
+              <button type="button" class="danger-outline-btn" id="btn-open-reset-modal">Start Fresh (Clear All Transactions)</button>
+            </article>
+          </section>
+        </main>
+
+        <!-- Bottom iOS Tab Bar -->
+        <nav class="tab-bar" aria-label="Primary navigation">
+          <button type="button" class="tab-item active" data-tab="spend" id="nav-spend">
+            <span class="tab-icon" aria-hidden="true">₡</span>
+            <span class="tab-label">Spend</span>
+          </button>
+          <button type="button" class="tab-item" data-tab="activity" id="nav-activity">
+            <span class="tab-icon" aria-hidden="true">≡</span>
+            <span class="tab-label">Activity</span>
+          </button>
+          <button type="button" class="tab-item" data-tab="plan" id="nav-plan">
+            <span class="tab-icon" aria-hidden="true">◫</span>
+            <span class="tab-label">Plan</span>
+          </button>
+          <button type="button" class="tab-item" data-tab="insights" id="nav-insights">
+            <span class="tab-icon" aria-hidden="true">◔</span>
+            <span class="tab-label">Insights</span>
+          </button>
+        </nav>
+
+        <!-- Toast Notification -->
+        <div class="toast" id="toast" role="status" aria-live="polite" hidden>
+          <span id="toast-message"></span>
+          <button type="button" class="toast-undo" id="toast-undo-btn" hidden>Undo</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Native Dialog: Add / Edit Fixed Bill -->
+  <dialog id="dialog-bill" class="ios-dialog" aria-labelledby="dialog-bill-title">
+    <form method="dialog" id="form-bill" class="dialog-form">
+      <div class="dialog-header">
+        <h3 id="dialog-bill-title">New Recurring Bill</h3>
+        <button type="button" class="dialog-close" id="btn-close-bill-dialog" aria-label="Close">✕</button>
+      </div>
+      <div class="dialog-body">
+        <input type="hidden" id="bill-edit-id" />
+        <div class="field-group">
+          <label for="bill-name" class="field-label">Bill Name</label>
+          <input type="text" id="bill-name" class="std-input" placeholder="e.g. Alquiler, ICE Luz, Kolbi" required maxlength="40" />
+        </div>
+        <div class="field-row two-col">
+          <div class="field-group">
+            <label for="bill-amount" class="field-label">Amount (₡)</label>
+            <input type="number" id="bill-amount" class="std-input" min="1" step="500" placeholder="45000" required />
+          </div>
+          <div class="field-group">
+            <label for="bill-day" class="field-label">Due Day (1–31)</label>
+            <input type="number" id="bill-day" class="std-input" min="1" max="31" value="1" required />
+          </div>
+        </div>
+        <div class="field-group">
+          <label for="bill-category" class="field-label">Category</label>
+          <select id="bill-category" class="std-input">
+            <!-- Populated by JS -->
+          </select>
+        </div>
+      </div>
+      <div class="dialog-footer">
+        <button type="button" class="secondary-btn" id="btn-cancel-bill">Cancel</button>
+        <button type="submit" class="primary-pill-btn">Save Bill</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Native Dialog: Edit Transaction -->
+  <dialog id="dialog-tx" class="ios-dialog" aria-labelledby="dialog-tx-title">
+    <form method="dialog" id="form-tx" class="dialog-form">
+      <div class="dialog-header">
+        <h3 id="dialog-tx-title">Edit Expense</h3>
+        <button type="button" class="dialog-close" id="btn-close-tx-dialog" aria-label="Close">✕</button>
+      </div>
+      <div class="dialog-body">
+        <input type="hidden" id="tx-edit-id" />
+        <div class="field-group">
+          <label for="tx-amount" class="field-label">Amount (₡)</label>
+          <input type="number" id="tx-amount" class="std-input" min="1" step="100" required />
+        </div>
+        <div class="field-group">
+          <label for="tx-category" class="field-label">Category</label>
+          <select id="tx-category" class="std-input"></select>
+        </div>
+        <div class="field-group">
+          <label for="tx-note" class="field-label">Note</label>
+          <input type="text" id="tx-note" class="std-input" maxlength="60" placeholder="Merchant or detail" />
+        </div>
+        <div class="field-group">
+          <label for="tx-date" class="field-label">Date</label>
+          <input type="date" id="tx-date" class="std-input" required />
+        </div>
+      </div>
+      <div class="dialog-footer space-between">
+        <button type="button" class="danger-outline-btn compact" id="btn-delete-tx">Delete</button>
+        <div class="dialog-footer-right">
+          <button type="button" class="secondary-btn" id="btn-cancel-tx">Cancel</button>
+          <button type="submit" class="primary-pill-btn">Save</button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Native Dialog: Confirm Clean Slate Reset -->
+  <dialog id="dialog-reset" class="ios-dialog" aria-labelledby="dialog-reset-title">
+    <div class="dialog-form">
+      <div class="dialog-header">
+        <h3 id="dialog-reset-title">Start Fresh?</h3>
+        <button type="button" class="dialog-close" id="btn-close-reset-dialog" aria-label="Close">✕</button>
+      </div>
+      <div class="dialog-body">
+        <p class="dialog-copy">
+          This clears all logged expenses and resets your budget to a clean slate so you can start tracking your own CRC numbers. Fixed bills can be kept or cleared.
+        </p>
+      </div>
+      <div class="dialog-footer">
+        <button type="button" class="secondary-btn" id="btn-cancel-reset">Cancel</button>
+        <button type="button" class="secondary-btn" id="btn-reset-keep-bills">Clear Expenses Only</button>
+        <button type="button" class="danger-solid-btn" id="btn-reset-all">Clear Everything</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Native Dialog: Add / Edit Category -->
+  <dialog id="dialog-category" class="ios-dialog" aria-labelledby="dialog-cat-title">
+    <form method="dialog" id="form-category" class="dialog-form">
+      <div class="dialog-header">
+        <h3 id="dialog-cat-title">Edit Category</h3>
+        <button type="button" class="dialog-close" id="btn-close-cat-dialog" aria-label="Close">✕</button>
+      </div>
+      <div class="dialog-body">
+        <input type="hidden" id="cat-edit-id" />
+        <div class="field-row cat-emoji-name-row">
+          <div class="field-group">
+            <label for="cat-emoji" class="field-label">Emoji</label>
+            <input type="text" id="cat-emoji" class="std-input emoji-input" maxlength="4" required />
+          </div>
+          <div class="field-group">
+            <label for="cat-name" class="field-label">Short Name (Keypad)</label>
+            <input type="text" id="cat-name" class="std-input" placeholder="e.g. Pets, Coffee" maxlength="16" required />
+          </div>
+        </div>
+        <div class="field-group">
+          <span class="field-label">Quick Emoji Picker</span>
+          <div class="emoji-presets-grid" id="cat-emoji-presets"></div>
+        </div>
+        <div class="field-group">
+          <label for="cat-fullname" class="field-label">Full Display Name (Optional)</label>
+          <input type="text" id="cat-fullname" class="std-input" placeholder="e.g. Pets &amp; Vet" maxlength="32" />
+        </div>
+        <div class="field-group">
+          <label for="cat-color" class="field-label">Accent Color</label>
+          <div class="color-picker-row">
+            <div class="color-swatches-row" id="cat-color-swatches"></div>
+            <input type="color" id="cat-color" class="color-native-input" value="#10b981" aria-label="Custom color" />
+          </div>
+        </div>
+      </div>
+      <div class="dialog-footer space-between">
+        <button type="button" class="danger-outline-btn compact" id="btn-delete-category">Delete</button>
+        <div class="dialog-footer-right">
+          <button type="button" class="secondary-btn" id="btn-cancel-category">Cancel</button>
+          <button type="submit" class="primary-pill-btn">Save Category</button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="./app.js" defer></script>
+</body>
+</html>
